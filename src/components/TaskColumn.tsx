@@ -2,8 +2,9 @@ import { useDroppable } from '@dnd-kit/core';
 import { Column, Task } from '../types';
 import { TaskCard } from './TaskCard';
 import { cn } from '../lib/utils';
-import { Plus, MoreHorizontal } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { ColumnMenu } from './ColumnMenu';
 
 interface TaskColumnProps {
   column: Column;
@@ -11,6 +12,9 @@ interface TaskColumnProps {
   onAddTask: (status: Column['id']) => void;
   onEditTask: (task: Task) => void;
   onDeleteTask: (id: string) => void;
+  onClearColumn: (columnId: Column['id']) => void;
+  onSortColumn: (columnId: Column['id']) => void;
+  onMarkAllComplete: (columnId: Column['id']) => void;
 }
 
 export function TaskColumn({ 
@@ -18,7 +22,10 @@ export function TaskColumn({
   tasks, 
   onAddTask, 
   onEditTask, 
-  onDeleteTask 
+  onDeleteTask,
+  onClearColumn,
+  onSortColumn,
+  onMarkAllComplete
 }: TaskColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: column.id,
@@ -82,17 +89,12 @@ export function TaskColumn({
           >
             <Plus size={18} />
           </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className={cn(
-              "p-1.5 rounded-full transition-colors",
-              `hover:bg-${column.id === 'todo' ? 'todo' : column.id === 'in-progress' ? 'progress' : 'done'}/20 dark:hover:bg-${column.id === 'todo' ? 'todo' : column.id === 'in-progress' ? 'progress' : 'done'}/30`,
-              `text-${column.id === 'todo' ? 'todo' : column.id === 'in-progress' ? 'progress' : 'done'}-dark dark:text-${column.id === 'todo' ? 'todo' : column.id === 'in-progress' ? 'progress' : 'done'}`
-            )}
-          >
-            <MoreHorizontal size={18} />
-          </motion.button>
+          <ColumnMenu 
+            column={column}
+            onClearColumn={onClearColumn}
+            onSortColumn={onSortColumn}
+            onMarkAllComplete={onMarkAllComplete}
+          />
         </div>
       </motion.div>
       

@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Task, TaskStatus } from '../types';
-import { X, CheckCircle2, Clock, AlignLeft } from 'lucide-react';
+import { X, CheckCircle2, Clock, AlignLeft, Trash2, ArrowUpDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface TaskFormModalProps {
@@ -18,6 +18,15 @@ export function TaskFormModal({
   onSave,
   initialStatus = 'todo'
 }: TaskFormModalProps) {
+  const [selectedStatus, setSelectedStatus] = useState<TaskStatus>(
+    task ? task.status : initialStatus
+  );
+
+  // Update selected status when task or initialStatus changes
+  useEffect(() => {
+    setSelectedStatus(task ? task.status : initialStatus);
+  }, [task, initialStatus]);
+
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -35,7 +44,7 @@ export function TaskFormModal({
       id: task?.id,
       title: formData.get('title') as string,
       description: formData.get('description') as string,
-      status: (formData.get('status') as TaskStatus) || initialStatus,
+      status: selectedStatus,
     });
     
     onClose();
@@ -109,35 +118,30 @@ export function TaskFormModal({
               </div>
               
               <div className="mb-6">
-                <label htmlFor="status" className="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-1.5 flex items-center">
+                <label className="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-1.5 flex items-center">
                   <Clock size={16} className="mr-1.5 text-primary-500" />
                   Status
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   {statusOptions.map((option) => (
-                    <label 
+                    <button
                       key={option.value}
-                      className="flex items-center"
-                    >
-                      <input
-                        type="radio"
-                        name="status"
-                        value={option.value}
-                        defaultChecked={task ? task.status === option.value : initialStatus === option.value}
-                        className="sr-only"
-                      />
-                      <div className={`
-                        w-full py-2 px-3 rounded-lg text-center text-sm font-medium cursor-pointer
+                      type="button"
+                      onClick={() => setSelectedStatus(option.value as TaskStatus)}
+                      className={`
+                        py-2 px-3 rounded-lg text-center text-sm font-medium
                         transition-all duration-200 border-2
-                        ${task?.status === option.value || (!task && initialStatus === option.value) 
+                        ${selectedStatus === option.value
                           ? option.color + ' border-transparent' 
                           : 'bg-secondary-100 dark:bg-secondary-800 border-secondary-200 dark:border-secondary-700 text-secondary-700 dark:text-secondary-300 hover:bg-secondary-200 dark:hover:bg-secondary-700'}
-                      `}>
-                        {option.label}
-                      </div>
-                    </label>
+                      `}
+                    >
+                      {option.label}
+                    </button>
                   ))}
                 </div>
+                {/* Hidden input to store the selected status */}
+                <input type="hidden" name="status" value={selectedStatus} />
               </div>
               
               <div className="flex justify-end space-x-3 mt-8">

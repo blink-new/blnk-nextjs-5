@@ -7,6 +7,7 @@ import { TaskFormModal } from './TaskFormModal';
 import { getTasks, saveTasks, updateTaskStatus } from '../lib/taskStorage';
 import { Plus, Layout, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
 
 const defaultColumns: Column[] = [
   { id: 'todo', title: 'To Do' },
@@ -79,6 +80,7 @@ export function TaskBoard() {
     const updatedTasks = tasks.filter(task => task.id !== id);
     setTasks(updatedTasks);
     saveTasks(updatedTasks);
+    toast.success('Task deleted');
   };
 
   const handleSaveTask = (taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }) => {
@@ -100,6 +102,7 @@ export function TaskBoard() {
       
       setTasks(updatedTasks);
       saveTasks(updatedTasks);
+      toast.success('Task updated');
     } else {
       // Creating new task
       const newTask: Task = {
@@ -114,7 +117,41 @@ export function TaskBoard() {
       const updatedTasks = [...tasks, newTask];
       setTasks(updatedTasks);
       saveTasks(updatedTasks);
+      toast.success('Task created');
     }
+  };
+
+  // Column menu functions
+  const handleClearColumn = (columnId: Column['id']) => {
+    const updatedTasks = tasks.filter(task => task.status !== columnId);
+    setTasks(updatedTasks);
+    saveTasks(updatedTasks);
+    toast.success(`Cleared all tasks from ${defaultColumns.find(col => col.id === columnId)?.title}`);
+  };
+
+  const handleSortColumn = (columnId: Column['id']) => {
+    const columnTasks = tasks.filter(task => task.status === columnId);
+    const otherTasks = tasks.filter(task => task.status !== columnId);
+    
+    // Sort by updatedAt (newest first)
+    const sortedColumnTasks = [...columnTasks].sort((a, b) => b.updatedAt - a.updatedAt);
+    
+    const updatedTasks = [...sortedColumnTasks, ...otherTasks];
+    setTasks(updatedTasks);
+    saveTasks(updatedTasks);
+    toast.success(`Sorted tasks in ${defaultColumns.find(col => col.id === columnId)?.title}`);
+  };
+
+  const handleMarkAllComplete = (columnId: Column['id']) => {
+    const updatedTasks = tasks.map(task => 
+      task.status === columnId 
+        ? { ...task, status: 'done', updatedAt: Date.now() } 
+        : task
+    );
+    
+    setTasks(updatedTasks);
+    saveTasks(updatedTasks);
+    toast.success(`Marked all tasks as complete from ${defaultColumns.find(col => col.id === columnId)?.title}`);
   };
 
   const filteredTasks = searchQuery.trim() === '' 
@@ -177,6 +214,9 @@ export function TaskBoard() {
               onAddTask={handleAddTask}
               onEditTask={handleEditTask}
               onDeleteTask={handleDeleteTask}
+              onClearColumn={handleClearColumn}
+              onSortColumn={handleSortColumn}
+              onMarkAllComplete={handleMarkAllComplete}
             />
           ))}
         </div>
