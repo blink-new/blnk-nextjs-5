@@ -149,7 +149,14 @@ export function TaskBoard() {
         </div>
         
         <DragOverlay>
-          {activeTask && <TaskCard task={activeTask} onEdit={() => {}} onDelete={() => {}} />}
+          {activeTask && (
+            <TaskCard 
+              task={activeTask} 
+              onEdit={() => {}} 
+              onDelete={() => {}} 
+              isDragging={true}
+            />
+          )}
         </DragOverlay>
       </DndContext>
       
