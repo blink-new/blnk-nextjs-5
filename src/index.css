@@ -4,10 +4,10 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 210 40% 98%;
     --foreground: 222.2 84% 4.9%;
 
-    --primary: 199 89% 48%;
+    --primary: 206 89% 48%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
@@ -26,14 +26,14 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 222.2 47.4% 11.2%;
     --foreground: 210 40% 98%;
 
-    --primary: 199 89% 48%;
+    --primary: 206 89% 48%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 217.2 32.6% 17.5%;
@@ -59,15 +59,19 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-medium tracking-tight;
   }
 }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -75,14 +79,14 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-secondary-300 dark:bg-secondary-700 rounded-full;
+  @apply bg-secondary-300/70 dark:bg-secondary-700/70 rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-secondary-400 dark:bg-secondary-600;
+  @apply bg-secondary-400/80 dark:bg-secondary-600/80;
 }
 
-/* Animations */
+/* Task animations */
 .task-enter {
   opacity: 0;
   transform: scale(0.9);
@@ -99,4 +103,14 @@
   opacity: 0;
   transform: scale(0.9);
   transition: opacity 300ms, transform 300ms;
+}
+
+/* Glass effect */
+.glass-effect {
+  @apply bg-white/80 dark:bg-secondary-800/80 backdrop-blur-sm;
+}
+
+/* Gradient text */
+.gradient-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-primary-700;
 }

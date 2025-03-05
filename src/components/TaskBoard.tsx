@@ -5,7 +5,7 @@ import { TaskColumn } from './TaskColumn';
 import { TaskCard } from './TaskCard';
 import { TaskFormModal } from './TaskFormModal';
 import { getTasks, saveTasks, updateTaskStatus } from '../lib/taskStorage';
-import { Plus } from 'lucide-react';
+import { Plus, Layout, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const defaultColumns: Column[] = [
@@ -20,6 +20,7 @@ export function TaskBoard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [initialStatus, setInitialStatus] = useState<TaskStatus>('todo');
+  const [searchQuery, setSearchQuery] = useState('');
   
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -116,18 +117,50 @@ export function TaskBoard() {
     }
   };
 
+  const filteredTasks = searchQuery.trim() === '' 
+    ? tasks 
+    : tasks.filter(task => 
+        task.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        (task.description && task.description.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+
   return (
     <div className="h-full">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-secondary-900 dark:text-secondary-100">Task Board</h1>
-        <button
-          onClick={() => handleAddTask('todo')}
-          className="flex items-center gap-1 px-3 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600 
-                     focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-        >
-          <Plus size={18} />
-          <span>Add Task</span>
-        </button>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-secondary-900 dark:text-secondary-100 mb-1 flex items-center">
+            <Layout className="mr-2 text-primary-500" size={28} />
+            <span>My Tasks</span>
+          </h1>
+          <p className="text-secondary-600 dark:text-secondary-400">
+            Organize, prioritize, and track your tasks
+          </p>
+        </div>
+        
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary-400" size={18} />
+            <input
+              type="text"
+              placeholder="Search tasks..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 pr-4 py-2.5 w-full sm:w-64 bg-white dark:bg-secondary-800 border border-secondary-200 dark:border-secondary-700 
+                       rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-500"
+            />
+          </div>
+          
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => handleAddTask('todo')}
+            className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-primary-500 text-white rounded-xl hover:bg-primary-600 
+                     focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 shadow-sm"
+          >
+            <Plus size={18} />
+            <span className="font-medium">Add Task</span>
+          </motion.button>
+        </div>
       </div>
       
       <DndContext
@@ -135,12 +168,12 @@ export function TaskBoard() {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {defaultColumns.map(column => (
             <TaskColumn
               key={column.id}
               column={column}
-              tasks={tasks.filter(task => task.status === column.id)}
+              tasks={filteredTasks.filter(task => task.status === column.id)}
               onAddTask={handleAddTask}
               onEditTask={handleEditTask}
               onDeleteTask={handleDeleteTask}

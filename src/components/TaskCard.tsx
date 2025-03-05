@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Task } from '../types';
 import { cn } from '../lib/utils';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useDraggable } from '@dnd-kit/core';
 
@@ -24,9 +24,9 @@ export function TaskCard({ task, onEdit, onDelete, isDragging }: TaskCardProps) 
   });
   
   const statusColors = {
-    'todo': 'border-l-yellow-500',
-    'in-progress': 'border-l-blue-500',
-    'done': 'border-l-green-500'
+    'todo': 'border-l-todo',
+    'in-progress': 'border-l-progress',
+    'done': 'border-l-done'
   };
   
   const formatDate = (timestamp: number) => {
@@ -38,6 +38,7 @@ export function TaskCard({ task, onEdit, onDelete, isDragging }: TaskCardProps) 
 
   const style = transform ? {
     transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+    zIndex: 20,
   } : undefined;
 
   return (
@@ -48,11 +49,13 @@ export function TaskCard({ task, onEdit, onDelete, isDragging }: TaskCardProps) 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9 }}
+      whileHover={{ y: -2 }}
+      transition={{ duration: 0.2 }}
       className={cn(
-        'bg-white dark:bg-secondary-800 rounded-md shadow-sm p-4 mb-2 cursor-grab',
-        'border-l-4 hover:shadow-md transition-shadow duration-200',
+        'bg-white dark:bg-secondary-800 rounded-xl shadow-task p-4 mb-3 cursor-grab',
+        'border-l-4 hover:shadow-task-hover transition-all duration-200',
         statusColors[task.status],
-        isDragging && 'opacity-50'
+        isDragging && 'opacity-60 rotate-1 scale-105'
       )}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -60,29 +63,37 @@ export function TaskCard({ task, onEdit, onDelete, isDragging }: TaskCardProps) 
       {...attributes}
     >
       <div className="flex justify-between items-start">
-        <h3 className="font-medium text-secondary-900 dark:text-secondary-100 mb-1">{task.title}</h3>
+        <h3 className="font-semibold text-secondary-900 dark:text-secondary-100 mb-1">{task.title}</h3>
         
         {isHovered && !isDragging && (
-          <div className="flex space-x-1">
-            <button 
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex space-x-1"
+          >
+            <motion.button 
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
               onClick={(e) => {
                 e.stopPropagation();
                 onEdit(task);
               }}
-              className="p-1 text-secondary-500 hover:text-primary-500 transition-colors"
+              className="p-1.5 rounded-full bg-secondary-100 dark:bg-secondary-700 text-secondary-500 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-colors"
             >
-              <Edit size={16} />
-            </button>
-            <button 
+              <Edit size={14} />
+            </motion.button>
+            <motion.button 
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete(task.id);
               }}
-              className="p-1 text-secondary-500 hover:text-red-500 transition-colors"
+              className="p-1.5 rounded-full bg-secondary-100 dark:bg-secondary-700 text-secondary-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
             >
-              <Trash2 size={16} />
-            </button>
-          </div>
+              <Trash2 size={14} />
+            </motion.button>
+          </motion.div>
         )}
       </div>
       
@@ -92,7 +103,8 @@ export function TaskCard({ task, onEdit, onDelete, isDragging }: TaskCardProps) 
         </p>
       )}
       
-      <div className="text-xs text-secondary-500 dark:text-secondary-500 mt-2">
+      <div className="flex items-center text-xs text-secondary-500 dark:text-secondary-500 mt-2">
+        <Clock size={12} className="mr-1" />
         {formatDate(task.updatedAt)}
       </div>
     </motion.div>

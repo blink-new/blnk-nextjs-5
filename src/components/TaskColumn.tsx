@@ -1,8 +1,8 @@
-import { useDndMonitor, useDroppable } from '@dnd-kit/core';
+import { useDroppable } from '@dnd-kit/core';
 import { Column, Task } from '../types';
 import { TaskCard } from './TaskCard';
 import { cn } from '../lib/utils';
-import { Plus } from 'lucide-react';
+import { Plus, MoreHorizontal } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface TaskColumnProps {
@@ -29,37 +29,82 @@ export function TaskColumn({
   });
 
   const columnColors = {
-    'todo': 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-900/30',
-    'in-progress': 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900/30',
-    'done': 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900/30',
+    'todo': 'bg-todo-light dark:bg-todo-dark/10 border-todo-border dark:border-todo-darkBorder',
+    'in-progress': 'bg-progress-light dark:bg-progress-dark/10 border-progress-border dark:border-progress-darkBorder',
+    'done': 'bg-done-light dark:bg-done-dark/10 border-done-border dark:border-done-darkBorder',
   };
 
   const titleColors = {
-    'todo': 'text-yellow-700 dark:text-yellow-400',
-    'in-progress': 'text-blue-700 dark:text-blue-400',
-    'done': 'text-green-700 dark:text-green-400',
+    'todo': 'text-todo-dark dark:text-todo',
+    'in-progress': 'text-progress-dark dark:text-progress',
+    'done': 'text-done-dark dark:text-done',
+  };
+
+  const headerBg = {
+    'todo': 'bg-todo/10 dark:bg-todo/20',
+    'in-progress': 'bg-progress/10 dark:bg-progress/20',
+    'done': 'bg-done/10 dark:bg-done/20',
   };
 
   return (
     <div className="flex flex-col h-full min-h-[500px] w-full">
-      <div className="flex items-center justify-between mb-2">
-        <h2 className={cn("font-semibold", titleColors[column.id])}>
-          {column.title} ({tasks.length})
-        </h2>
-        <button
-          onClick={() => onAddTask(column.id)}
-          className="p-1 rounded-full hover:bg-secondary-200 dark:hover:bg-secondary-700 transition-colors"
-        >
-          <Plus size={18} className="text-secondary-500" />
-        </button>
-      </div>
+      <motion.div 
+        initial={{ opacity: 0, y: 5 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className={cn(
+          "flex items-center justify-between mb-3 px-3 py-2 rounded-lg",
+          headerBg[column.id]
+        )}
+      >
+        <div className="flex items-center">
+          <h2 className={cn("font-semibold", titleColors[column.id])}>
+            {column.title}
+          </h2>
+          <div className={cn(
+            "ml-2 px-2 py-0.5 text-xs rounded-full font-medium",
+            `bg-${column.id === 'todo' ? 'todo' : column.id === 'in-progress' ? 'progress' : 'done'}/20 dark:bg-${column.id === 'todo' ? 'todo' : column.id === 'in-progress' ? 'progress' : 'done'}/30`,
+            `text-${column.id === 'todo' ? 'todo' : column.id === 'in-progress' ? 'progress' : 'done'}-dark dark:text-${column.id === 'todo' ? 'todo' : column.id === 'in-progress' ? 'progress' : 'done'}`
+          )}>
+            {tasks.length}
+          </div>
+        </div>
+        <div className="flex items-center gap-1">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => onAddTask(column.id)}
+            className={cn(
+              "p-1.5 rounded-full transition-colors",
+              `hover:bg-${column.id === 'todo' ? 'todo' : column.id === 'in-progress' ? 'progress' : 'done'}/20 dark:hover:bg-${column.id === 'todo' ? 'todo' : column.id === 'in-progress' ? 'progress' : 'done'}/30`,
+              `text-${column.id === 'todo' ? 'todo' : column.id === 'in-progress' ? 'progress' : 'done'}-dark dark:text-${column.id === 'todo' ? 'todo' : column.id === 'in-progress' ? 'progress' : 'done'}`
+            )}
+          >
+            <Plus size={18} />
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className={cn(
+              "p-1.5 rounded-full transition-colors",
+              `hover:bg-${column.id === 'todo' ? 'todo' : column.id === 'in-progress' ? 'progress' : 'done'}/20 dark:hover:bg-${column.id === 'todo' ? 'todo' : column.id === 'in-progress' ? 'progress' : 'done'}/30`,
+              `text-${column.id === 'todo' ? 'todo' : column.id === 'in-progress' ? 'progress' : 'done'}-dark dark:text-${column.id === 'todo' ? 'todo' : column.id === 'in-progress' ? 'progress' : 'done'}`
+            )}
+          >
+            <MoreHorizontal size={18} />
+          </motion.button>
+        </div>
+      </motion.div>
       
       <div
         ref={setNodeRef}
         className={cn(
-          "flex-1 p-2 rounded-md border overflow-y-auto",
+          "flex-1 p-3 rounded-xl border overflow-y-auto shadow-column",
           columnColors[column.id],
-          isOver && "ring-2 ring-primary-400 dark:ring-primary-500"
+          isOver && "ring-2 ring-offset-2 ring-offset-secondary-50 dark:ring-offset-secondary-900",
+          isOver && column.id === 'todo' && "ring-todo",
+          isOver && column.id === 'in-progress' && "ring-progress",
+          isOver && column.id === 'done' && "ring-done"
         )}
       >
         <motion.div layout>
@@ -73,8 +118,19 @@ export function TaskColumn({
           ))}
           
           {tasks.length === 0 && (
-            <div className="h-full flex items-center justify-center text-secondary-400 dark:text-secondary-600 text-sm italic">
-              Drop tasks here
+            <div className="h-full min-h-[200px] flex flex-col items-center justify-center text-secondary-400 dark:text-secondary-600 text-sm">
+              <motion.div 
+                animate={{ y: [0, -5, 0] }}
+                transition={{ repeat: Infinity, duration: 2 }}
+                className="mb-3 opacity-70"
+              >
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" 
+                        stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </motion.div>
+              <p className="font-medium">Drop tasks here</p>
+              <p className="text-xs mt-1 opacity-70">or click + to add a new task</p>
             </div>
           )}
         </motion.div>
