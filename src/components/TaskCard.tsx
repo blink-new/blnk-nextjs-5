@@ -10,9 +10,10 @@ interface TaskCardProps {
   onEdit: (task: Task) => void;
   onDelete: (id: string) => void;
   isDragging?: boolean;
+  dragOverlay?: boolean;
 }
 
-export function TaskCard({ task, onEdit, onDelete, isDragging }: TaskCardProps) {
+export function TaskCard({ task, onEdit, onDelete, isDragging, dragOverlay }: TaskCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
@@ -55,7 +56,8 @@ export function TaskCard({ task, onEdit, onDelete, isDragging }: TaskCardProps) 
         'bg-white dark:bg-secondary-800 rounded-xl shadow-task p-4 mb-3 cursor-grab',
         'border-l-4 hover:shadow-task-hover transition-all duration-200',
         statusColors[task.status],
-        isDragging && 'opacity-60 rotate-1 scale-105'
+        isDragging && 'opacity-50',
+        dragOverlay && 'opacity-80 rotate-2 scale-105 shadow-xl'
       )}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -65,7 +67,7 @@ export function TaskCard({ task, onEdit, onDelete, isDragging }: TaskCardProps) 
       <div className="flex justify-between items-start">
         <h3 className="font-semibold text-secondary-900 dark:text-secondary-100 mb-1">{task.title}</h3>
         
-        {isHovered && !isDragging && (
+        {isHovered && !isDragging && !dragOverlay && (
           <motion.div 
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}

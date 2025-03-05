@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { DndContext, DragEndEvent, DragOverEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { Column, Task, TaskStatus } from '../types';
 import { TaskColumn } from './TaskColumn';
 import { TaskCard } from './TaskCard';
@@ -22,6 +22,8 @@ export function TaskBoard() {
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [initialStatus, setInitialStatus] = useState<TaskStatus>('todo');
   const [searchQuery, setSearchQuery] = useState('');
+  const [previewTaskId, setPreviewTaskId] = useState<string | null>(null);
+  const [previewColumn, setPreviewColumn] = useState<TaskStatus | null>(null);
   
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -41,6 +43,19 @@ export function TaskBoard() {
     const task = tasks.find(t => t.id === activeTaskId);
     if (task) {
       setActiveTask(task);
+      setPreviewTaskId(activeTaskId);
+    }
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
+    
+    if (over && active.id !== over.id) {
+      const taskId = active.id as string;
+      const newStatus = over.id as TaskStatus;
+      
+      // Update preview column
+      setPreviewColumn(newStatus);
     }
   };
 
@@ -63,6 +78,8 @@ export function TaskBoard() {
     }
     
     setActiveTask(null);
+    setPreviewTaskId(null);
+    setPreviewColumn(null);
   };
 
   const handleAddTask = (status: TaskStatus) => {
@@ -154,9 +171,22 @@ export function TaskBoard() {
     toast.success(`Marked all tasks as complete from ${defaultColumns.find(col => col.id === columnId)?.title}`);
   };
 
+  // Get tasks with preview applied
+  const getTasksWithPreview = () => {
+    if (!previewTaskId || !previewColumn) return tasks;
+    
+    return tasks.map(task => 
+      task.id === previewTaskId 
+        ? { ...task, status: previewColumn } 
+        : task
+    );
+  };
+
+  const tasksWithPreview = getTasksWithPreview();
+  
   const filteredTasks = searchQuery.trim() === '' 
-    ? tasks 
-    : tasks.filter(task => 
+    ? tasksWithPreview 
+    : tasksWithPreview.filter(task => 
         task.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
         (task.description && task.description.toLowerCase().includes(searchQuery.toLowerCase()))
       );
@@ -203,6 +233,7 @@ export function TaskBoard() {
       <DndContext
         sensors={sensors}
         onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -217,6 +248,7 @@ export function TaskBoard() {
               onClearColumn={handleClearColumn}
               onSortColumn={handleSortColumn}
               onMarkAllComplete={handleMarkAllComplete}
+              activeTaskId={activeTask?.id}
             />
           ))}
         </div>
@@ -228,6 +260,7 @@ export function TaskBoard() {
               onEdit={() => {}} 
               onDelete={() => {}} 
               isDragging={true}
+              dragOverlay={true}
             />
           )}
         </DragOverlay>

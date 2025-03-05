@@ -15,6 +15,7 @@ interface TaskColumnProps {
   onClearColumn: (columnId: Column['id']) => void;
   onSortColumn: (columnId: Column['id']) => void;
   onMarkAllComplete: (columnId: Column['id']) => void;
+  activeTaskId?: string;
 }
 
 export function TaskColumn({ 
@@ -25,7 +26,8 @@ export function TaskColumn({
   onDeleteTask,
   onClearColumn,
   onSortColumn,
-  onMarkAllComplete
+  onMarkAllComplete,
+  activeTaskId
 }: TaskColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: column.id,
@@ -116,6 +118,7 @@ export function TaskColumn({
               task={task}
               onEdit={onEditTask}
               onDelete={onDeleteTask}
+              isDragging={task.id === activeTaskId}
             />
           ))}
           
