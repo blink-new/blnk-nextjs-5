@@ -1,10 +1,9 @@
-import { useState, forwardRef } from 'react';
+import { useState } from 'react';
 import { Task } from '../types';
 import { cn } from '../lib/utils';
 import { Edit, Trash2, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { useDraggable } from '@dnd-kit/core';
 
 interface TaskCardProps {
   task: Task;
@@ -17,14 +16,7 @@ interface TaskCardProps {
 export function TaskCard({ task, onEdit, onDelete, isDragging, dragOverlay }: TaskCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging: isSorting
-  } = useSortable({
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: task.id,
     data: {
       type: 'task',
@@ -45,13 +37,12 @@ export function TaskCard({ task, onEdit, onDelete, isDragging, dragOverlay }: Ta
     });
   };
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: (isDragging || isSorting) ? 20 : 'auto',
-  };
+  const style = transform ? {
+    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+    zIndex: 20,
+  } : undefined;
 
-  const isCurrentlyDragging = isDragging || isSorting;
+  const isCurrentlyDragging = isDragging;
 
   return (
     <motion.div

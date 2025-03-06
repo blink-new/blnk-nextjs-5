@@ -10,12 +10,6 @@ import {
   useSensors,
   closestCenter
 } from '@dnd-kit/core';
-import { 
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy
-} from '@dnd-kit/sortable';
 import { Column, Task, TaskStatus } from '../types';
 import { TaskColumn } from './TaskColumn';
 import { TaskCard } from './TaskCard';
@@ -30,6 +24,13 @@ const defaultColumns: Column[] = [
   {id: 'in-progress', title: 'In Progress'},
   {id: 'done', title: 'Done'}
 ];
+
+// Helper function to reorder an array
+function arrayMove<T>(array: T[], from: number, to: number): T[] {
+  const newArray = array.slice();
+  newArray.splice(to < 0 ? newArray.length + to : to, 0, newArray.splice(from, 1)[0]);
+  return newArray;
+}
 
 export function TaskBoard() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -138,19 +139,6 @@ export function TaskBoard() {
         .findIndex(t => t.id === overId);
       
       setPreviewIndex(overTaskIndex);
-      
-      // Create a preview of the reordering
-      const activeIndex = tasks
-        .filter(t => t.status === activeTask.status)
-        .findIndex(t => t.id === activeId);
-      
-      const isBelowOverItem = 
-        activeIndex > overTaskIndex && 
-        activeTask.status === overTask.status;
-      
-      const modifier = isBelowOverItem ? 1 : 0;
-      
-      setPreviewIndex(overTaskIndex + modifier);
     }
   };
 
@@ -471,7 +459,7 @@ export function TaskBoard() {
             whileTap={{ scale: 0.98 }}
             onClick={() => handleAddTask('todo')}
             className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-primary-500 text-white rounded-xl hover:bg-primary-600 
-                     focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 shadow-sm"
+                focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 shadow-sm"
           >
             <Plus size={18} />
             <span className="font-medium">Add Task</span>
