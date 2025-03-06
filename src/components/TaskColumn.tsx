@@ -1,4 +1,5 @@
 import { useDroppable } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Column, Task } from '../types';
 import { TaskCard } from './TaskCard';
 import { cn } from '../lib/utils';
@@ -54,6 +55,9 @@ export function TaskColumn({
     'in-progress': 'bg-progress/10 dark:bg-progress/20',
     'done': 'bg-done/10 dark:bg-done/20',
   };
+
+  // Get task IDs for sortable context
+  const taskIds = tasks.map(task => task.id);
 
   return (
     <div className="flex flex-col h-full min-h-[500px] w-full">
@@ -111,34 +115,36 @@ export function TaskColumn({
           isOver && column.id === 'done' && "ring-done"
         )}
       >
-        <motion.div layout>
-          {tasks.map((task) => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              onEdit={onEditTask}
-              onDelete={onDeleteTask}
-              isDragging={task.id === activeTaskId}
-            />
-          ))}
-          
-          {tasks.length === 0 && (
-            <div className="h-full min-h-[200px] flex flex-col items-center justify-center text-secondary-400 dark:text-secondary-600 text-sm">
-              <motion.div 
-                animate={{ y: [0, -5, 0] }}
-                transition={{ repeat: Infinity, duration: 2 }}
-                className="mb-3 opacity-70"
-              >
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" 
-                        stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </motion.div>
-              <p className="font-medium">Drop tasks here</p>
-              <p className="text-xs mt-1 opacity-70">or click + to add a new task</p>
-            </div>
-          )}
-        </motion.div>
+        <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
+          <motion.div layout>
+            {tasks.map((task) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                onEdit={onEditTask}
+                onDelete={onDeleteTask}
+                isDragging={task.id === activeTaskId}
+              />
+            ))}
+            
+            {tasks.length === 0 && (
+              <div className="h-full min-h-[200px] flex flex-col items-center justify-center text-secondary-400 dark:text-secondary-600 text-sm">
+                <motion.div 
+                  animate={{ y: [0, -5, 0] }}
+                  transition={{ repeat: Infinity, duration: 2 }}
+                  className="mb-3 opacity-70"
+                >
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" 
+                          stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </motion.div>
+                <p className="font-medium">Drop tasks here</p>
+                <p className="text-xs mt-1 opacity-70">or click + to add a new task</p>
+              </div>
+            )}
+          </motion.div>
+        </SortableContext>
       </div>
     </div>
   );

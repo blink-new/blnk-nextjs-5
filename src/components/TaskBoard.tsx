@@ -1,5 +1,21 @@
 import { useState, useEffect } from 'react';
-import { DndContext, DragEndEvent, DragOverEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { 
+  DndContext, 
+  DragEndEvent, 
+  DragOverEvent, 
+  DragOverlay, 
+  DragStartEvent, 
+  PointerSensor, 
+  useSensor, 
+  useSensors,
+  closestCenter
+} from '@dnd-kit/core';
+import { 
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy
+} from '@dnd-kit/sortable';
 import { Column, Task, TaskStatus } from '../types';
 import { TaskColumn } from './TaskColumn';
 import { TaskCard } from './TaskCard';
@@ -10,9 +26,9 @@ import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 
 const defaultColumns: Column[] = [
-  { id: 'todo', title: 'To Do' },
-  { id: 'in-progress', title: 'In Progress' },
-  { id: 'done', title: 'Done' }
+  { id: 'todo', title: 'To Do'},
+  {id: 'in-progress', title: 'In Progress'},
+  {id: 'done', title: 'Done'}
 ];
 
 export function TaskBoard() {
@@ -24,6 +40,7 @@ export function TaskBoard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [previewTaskId, setPreviewTaskId] = useState<string | null>(null);
   const [previewColumn, setPreviewColumn] = useState<TaskStatus | null>(null);
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -34,7 +51,41 @@ export function TaskBoard() {
   );
 
   useEffect(() => {
-    setTasks(getTasks());
+    // Load tasks and ensure they have position values
+    const loadedTasks = getTasks();
+    
+    // Group tasks by status and assign positions if they don't have them
+    const tasksByStatus: Record<TaskStatus, Task[]> = {
+      'todo': [],
+      'in-progress': [],
+      'done': []
+    };
+    
+    // Group tasks by status
+    loadedTasks.forEach(task => {
+      tasksByStatus[task.status].push(task);
+    });
+    
+    // Assign positions within each status group if needed
+    const tasksWithPositions = loadedTasks.map((task, globalIndex) => {
+      if (task.position === undefined) {
+        // Find position within its status group
+        const statusGroup = tasksByStatus[task.status];
+        const statusIndex = statusGroup.findIndex(t => t.id === task.id);
+        return { ...task, position: statusIndex };
+      }
+      return task;
+    });
+    
+    // Sort tasks by position within each status
+    const sortedTasks = [...tasksWithPositions].sort((a, b) => {
+      if (a.status === b.status) {
+        return (a.position || 0) - (b.position || 0);
+      }
+      return 0; // Don't change order between different statuses
+    });
+    
+    setTasks(sortedTasks);
   }, []);
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -50,36 +101,186 @@ export function TaskBoard() {
   const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
     
-    if (over && active.id !== over.id) {
-      const taskId = active.id as string;
-      const newStatus = over.id as TaskStatus;
-      
-      // Update preview column
+    if (!over) return;
+    
+    const activeId = active.id as string;
+    const overId = over.id as string;
+    
+    if (activeId === overId) return;
+    
+    const activeTask = tasks.find(t => t.id === activeId);
+    if (!activeTask) return;
+    
+    // Check if we're hovering over a column or a task
+    const isOverColumn = defaultColumns.some(col => col.id === overId);
+    
+    if (isOverColumn) {
+      // We're hovering over a column
+      const newStatus = overId as TaskStatus;
       setPreviewColumn(newStatus);
+      
+      // Set preview index to the end of the column
+      const tasksInTargetColumn = tasks.filter(t => t.status === newStatus);
+      setPreviewIndex(tasksInTargetColumn.length);
+    } else {
+      // We're hovering over another task
+      const overTask = tasks.find(t => t.id === overId);
+      if (!overTask) return;
+      
+      // If tasks are in different columns, update the status
+      if (activeTask.status !== overTask.status) {
+        setPreviewColumn(overTask.status);
+      }
+      
+      // Find the index of the task we're hovering over
+      const overTaskIndex = tasks
+        .filter(t => t.status === overTask.status)
+        .findIndex(t => t.id === overId);
+      
+      setPreviewIndex(overTaskIndex);
+      
+      // Create a preview of the reordering
+      const activeIndex = tasks
+        .filter(t => t.status === activeTask.status)
+        .findIndex(t => t.id === activeId);
+      
+      const isBelowOverItem = 
+        activeIndex > overTaskIndex && 
+        activeTask.status === overTask.status;
+      
+      const modifier = isBelowOverItem ? 1 : 0;
+      
+      setPreviewIndex(overTaskIndex + modifier);
     }
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     
-    if (over && active.id !== over.id) {
-      const taskId = active.id as string;
-      const newStatus = over.id as TaskStatus;
-      
-      updateTaskStatus(taskId, newStatus);
-      
-      setTasks(prevTasks => 
-        prevTasks.map(task => 
-          task.id === taskId 
-            ? { ...task, status: newStatus, updatedAt: Date.now() } 
-            : task
-        )
-      );
+    if (!over) {
+      setActiveTask(null);
+      setPreviewTaskId(null);
+      setPreviewColumn(null);
+      setPreviewIndex(null);
+      return;
     }
+    
+    const activeId = active.id as string;
+    const overId = over.id as string;
+    
+    if (activeId === overId) {
+      setActiveTask(null);
+      setPreviewTaskId(null);
+      setPreviewColumn(null);
+      setPreviewIndex(null);
+      return;
+    }
+    
+    const activeTask = tasks.find(t => t.id === activeId);
+    if (!activeTask) return;
+    
+    // Check if we're dropping onto a column or a task
+    const isOverColumn = defaultColumns.some(col => col.id === overId);
+    
+    let updatedTasks = [...tasks];
+    
+    if (isOverColumn) {
+      // We're dropping onto a column
+      const newStatus = overId as TaskStatus;
+      
+      // Remove the task from its current position
+      updatedTasks = updatedTasks.filter(t => t.id !== activeId);
+      
+      // Add it to the end of the target column
+      const tasksInTargetColumn = updatedTasks.filter(t => t.status === newStatus);
+      const newPosition = tasksInTargetColumn.length;
+      
+      const updatedTask = {
+        ...activeTask,
+        status: newStatus,
+        position: newPosition,
+        updatedAt: Date.now()
+      };
+      
+      updatedTasks.push(updatedTask);
+      
+      // Update task status in storage
+      updateTaskStatus(activeId, newStatus);
+    } else {
+      // We're dropping onto another task
+      const overTask = tasks.find(t => t.id === overId);
+      if (!overTask) return;
+      
+      // If tasks are in different columns
+      if (activeTask.status !== overTask.status) {
+        // Remove the task from its current position
+        updatedTasks = updatedTasks.filter(t => t.id !== activeId);
+        
+        // Add it to the new column at the position of the over task
+        const updatedTask = {
+          ...activeTask,
+          status: overTask.status,
+          position: overTask.position,
+          updatedAt: Date.now()
+        };
+        
+        updatedTasks.push(updatedTask);
+        
+        // Update positions of all tasks in the target column
+        updatedTasks = updatedTasks.map(task => {
+          if (task.status === overTask.status && task.id !== activeId && (task.position || 0) >= (overTask.position || 0)) {
+            return { ...task, position: (task.position || 0) + 1 };
+          }
+          return task;
+        });
+        
+        // Update task status in storage
+        updateTaskStatus(activeId, overTask.status);
+      } else {
+        // Same column reordering
+        const activeIndex = tasks
+          .filter(t => t.status === activeTask.status)
+          .findIndex(t => t.id === activeId);
+        
+        const overIndex = tasks
+          .filter(t => t.status === overTask.status)
+          .findIndex(t => t.id === overId);
+        
+        // Get tasks in this column
+        const tasksInColumn = tasks.filter(t => t.status === activeTask.status);
+        
+        // Reorder the tasks in this column
+        const reorderedTasks = arrayMove(tasksInColumn, activeIndex, overIndex);
+        
+        // Update positions
+        const tasksWithUpdatedPositions = reorderedTasks.map((task, index) => ({
+          ...task,
+          position: index
+        }));
+        
+        // Replace the tasks in this column with the reordered ones
+        updatedTasks = [
+          ...tasks.filter(t => t.status !== activeTask.status),
+          ...tasksWithUpdatedPositions
+        ];
+      }
+    }
+    
+    // Sort tasks by position within each status
+    updatedTasks.sort((a, b) => {
+      if (a.status === b.status) {
+        return (a.position || 0) - (b.position || 0);
+      }
+      return 0;
+    });
+    
+    setTasks(updatedTasks);
+    saveTasks(updatedTasks);
     
     setActiveTask(null);
     setPreviewTaskId(null);
     setPreviewColumn(null);
+    setPreviewIndex(null);
   };
 
   const handleAddTask = (status: TaskStatus) => {
@@ -122,6 +323,9 @@ export function TaskBoard() {
       toast.success('Task updated');
     } else {
       // Creating new task
+      const tasksInTargetColumn = tasks.filter(t => t.status === (taskData.status || initialStatus));
+      const position = tasksInTargetColumn.length;
+      
       const newTask: Task = {
         id: crypto.randomUUID(),
         title: taskData.title,
@@ -129,6 +333,7 @@ export function TaskBoard() {
         status: taskData.status || initialStatus,
         createdAt: now,
         updatedAt: now,
+        position: position
       };
       
       const updatedTasks = [...tasks, newTask];
@@ -151,7 +356,9 @@ export function TaskBoard() {
     const otherTasks = tasks.filter(task => task.status !== columnId);
     
     // Sort by updatedAt (newest first)
-    const sortedColumnTasks = [...columnTasks].sort((a, b) => b.updatedAt - a.updatedAt);
+    const sortedColumnTasks = [...columnTasks]
+      .sort((a, b) => b.updatedAt - a.updatedAt)
+      .map((task, index) => ({ ...task, position: index }));
     
     const updatedTasks = [...sortedColumnTasks, ...otherTasks];
     setTasks(updatedTasks);
@@ -160,11 +367,21 @@ export function TaskBoard() {
   };
 
   const handleMarkAllComplete = (columnId: Column['id']) => {
-    const updatedTasks = tasks.map(task => 
-      task.status === columnId 
-        ? { ...task, status: 'done', updatedAt: Date.now() } 
-        : task
-    );
+    // Get current tasks in the done column to calculate positions
+    const doneTasks = tasks.filter(task => task.status === 'done');
+    let nextPosition = doneTasks.length;
+    
+    const updatedTasks = tasks.map(task => {
+      if (task.status === columnId) {
+        return { 
+          ...task, 
+          status: 'done', 
+          position: nextPosition++, 
+          updatedAt: Date.now() 
+        };
+      }
+      return task;
+    });
     
     setTasks(updatedTasks);
     saveTasks(updatedTasks);
@@ -173,13 +390,45 @@ export function TaskBoard() {
 
   // Get tasks with preview applied
   const getTasksWithPreview = () => {
-    if (!previewTaskId || !previewColumn) return tasks;
+    if (!previewTaskId) return tasks;
     
-    return tasks.map(task => 
-      task.id === previewTaskId 
-        ? { ...task, status: previewColumn } 
-        : task
-    );
+    let updatedTasks = [...tasks];
+    const activeTaskIndex = updatedTasks.findIndex(t => t.id === previewTaskId);
+    
+    if (activeTaskIndex === -1) return tasks;
+    
+    const activeTask = { ...updatedTasks[activeTaskIndex] };
+    
+    // Remove the task from its current position
+    updatedTasks.splice(activeTaskIndex, 1);
+    
+    // If we have a preview column, update the task's status
+    if (previewColumn) {
+      activeTask.status = previewColumn;
+    }
+    
+    // If we have a preview index, insert the task at that position
+    if (previewIndex !== null) {
+      // Get tasks in the target column
+      const tasksInTargetColumn = updatedTasks.filter(t => t.status === activeTask.status);
+      
+      // Calculate the global index to insert at
+      const globalInsertIndex = updatedTasks.findIndex(t => t.status === activeTask.status) + 
+        Math.min(previewIndex, tasksInTargetColumn.length);
+      
+      // Insert the task at the calculated position
+      if (globalInsertIndex >= 0) {
+        updatedTasks.splice(globalInsertIndex, 0, activeTask);
+      } else {
+        // If we couldn't find a valid position, just append to the end
+        updatedTasks.push(activeTask);
+      }
+    } else {
+      // If no preview index, just append to the end
+      updatedTasks.push(activeTask);
+    }
+    
+    return updatedTasks;
   };
 
   const tasksWithPreview = getTasksWithPreview();
@@ -232,6 +481,7 @@ export function TaskBoard() {
       
       <DndContext
         sensors={sensors}
+        collisionDetection={closestCenter}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}

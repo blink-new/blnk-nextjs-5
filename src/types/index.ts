@@ -32,6 +32,7 @@ export interface Task {
   status: TaskStatus;
   createdAt: number;
   updatedAt: number;
+  position?: number;
 }
 
 export interface Column {

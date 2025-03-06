@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, forwardRef } from 'react';
 import { Task } from '../types';
 import { cn } from '../lib/utils';
 import { Edit, Trash2, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useDraggable } from '@dnd-kit/core';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface TaskCardProps {
   task: Task;
@@ -16,7 +17,14 @@ interface TaskCardProps {
 export function TaskCard({ task, onEdit, onDelete, isDragging, dragOverlay }: TaskCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging: isSorting
+  } = useSortable({
     id: task.id,
     data: {
       type: 'task',
@@ -37,10 +45,13 @@ export function TaskCard({ task, onEdit, onDelete, isDragging, dragOverlay }: Ta
     });
   };
 
-  const style = transform ? {
-    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-    zIndex: 20,
-  } : undefined;
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: (isDragging || isSorting) ? 20 : 'auto',
+  };
+
+  const isCurrentlyDragging = isDragging || isSorting;
 
   return (
     <motion.div
@@ -56,7 +67,7 @@ export function TaskCard({ task, onEdit, onDelete, isDragging, dragOverlay }: Ta
         'bg-white dark:bg-secondary-800 rounded-xl shadow-task p-4 mb-3 cursor-grab',
         'border-l-4 hover:shadow-task-hover transition-all duration-200',
         statusColors[task.status],
-        isDragging && 'opacity-50',
+        isCurrentlyDragging && 'opacity-50',
         dragOverlay && 'opacity-80 rotate-2 scale-105 shadow-xl'
       )}
       onMouseEnter={() => setIsHovered(true)}
@@ -67,7 +78,7 @@ export function TaskCard({ task, onEdit, onDelete, isDragging, dragOverlay }: Ta
       <div className="flex justify-between items-start">
         <h3 className="font-semibold text-secondary-900 dark:text-secondary-100 mb-1">{task.title}</h3>
         
-        {isHovered && !isDragging && !dragOverlay && (
+        {isHovered && !isCurrentlyDragging && !dragOverlay && (
           <motion.div 
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
