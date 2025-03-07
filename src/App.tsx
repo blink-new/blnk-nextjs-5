@@ -23,7 +23,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-secondary-50 dark:bg-secondary-900 text-secondary-900 dark:text-secondary-100 transition-colors duration-200">
+    <div className="min-h-screen flex flex-col bg-secondary-50 dark:bg-secondary-900 text-secondary-900 dark:text-secondary-100 transition-colors duration-200">
       <header className="sticky top-0 z-10 border-b border-secondary-200/80 dark:border-secondary-800/80 bg-white/80 dark:bg-secondary-900/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
@@ -44,7 +44,7 @@ function App() {
         </div>
       </header>
       
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 flex-1 flex flex-col">
         <TaskBoard />
       </main>
       

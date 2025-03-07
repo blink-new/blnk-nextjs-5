@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Task } from '../types';
 import { cn } from '../lib/utils';
-import { Edit, Trash2, Clock } from 'lucide-react';
+import { Edit, Trash2, Clock, CheckSquare } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useDraggable } from '@dnd-kit/core';
 
@@ -43,6 +43,11 @@ export function TaskCard({ task, onEdit, onDelete, isDragging, dragOverlay }: Ta
   } : undefined;
 
   const isCurrentlyDragging = isDragging;
+  
+  // Calculate subtask completion stats
+  const subtasks = task.subtasks || [];
+  const completedSubtasks = subtasks.filter(subtask => subtask.completed).length;
+  const hasSubtasks = subtasks.length > 0;
 
   return (
     <motion.div
@@ -105,6 +110,25 @@ export function TaskCard({ task, onEdit, onDelete, isDragging, dragOverlay }: Ta
         <p className="text-sm text-secondary-600 dark:text-secondary-400 mb-3 line-clamp-2">
           {task.description}
         </p>
+      )}
+      
+      {hasSubtasks && (
+        <div className="mt-2 mb-2">
+          <div className="flex items-center gap-1.5 text-xs text-secondary-600 dark:text-secondary-400 mb-1.5">
+            <CheckSquare size={12} className="text-primary-500" />
+            <span>
+              {completedSubtasks} of {subtasks.length} subtasks
+            </span>
+          </div>
+          <div className="w-full h-1.5 bg-secondary-100 dark:bg-secondary-700 rounded-full overflow-hidden">
+            <motion.div 
+              initial={{ width: 0 }}
+              animate={{ width: `${subtasks.length ? (completedSubtasks / subtasks.length) * 100 : 0}%` }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              className="h-full bg-primary-500 rounded-full"
+            />
+          </div>
+        </div>
       )}
       
       <div className="flex items-center text-xs text-secondary-500 dark:text-secondary-500 mt-2">

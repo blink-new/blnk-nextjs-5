@@ -301,6 +301,7 @@ export function TaskBoard() {
               title: taskData.title, 
               description: taskData.description, 
               status: taskData.status, 
+              subtasks: taskData.subtasks,
               updatedAt: now 
             } 
           : task
@@ -319,6 +320,7 @@ export function TaskBoard() {
         title: taskData.title,
         description: taskData.description,
         status: taskData.status || initialStatus,
+        subtasks: taskData.subtasks,
         createdAt: now,
         updatedAt: now,
         position: position
@@ -425,7 +427,10 @@ export function TaskBoard() {
     ? tasksWithPreview 
     : tasksWithPreview.filter(task => 
         task.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        (task.description && task.description.toLowerCase().includes(searchQuery.toLowerCase()))
+        (task.description && task.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (task.subtasks && task.subtasks.some(st => 
+          st.title.toLowerCase().includes(searchQuery.toLowerCase())
+        ))
       );
 
   return (

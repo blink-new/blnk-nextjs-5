@@ -25,6 +25,13 @@ export interface ApiResponse {
 
 export type TaskStatus = 'todo' | 'in-progress' | 'done';
 
+export interface SubTask {
+  id: string;
+  title: string;
+  completed: boolean;
+  createdAt: number;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -33,6 +40,7 @@ export interface Task {
   createdAt: number;
   updatedAt: number;
   position?: number;
+  subtasks?: SubTask[];
 }
 
 export interface Column {

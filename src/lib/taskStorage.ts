@@ -1,4 +1,4 @@
-import { Task, TaskStatus } from '../types';
+import { Task, TaskStatus, SubTask } from '../types';
 
 const STORAGE_KEY = 'taskboard_tasks';
 
@@ -40,6 +40,11 @@ export const updateTask = (updatedTask: Task): void => {
     if (tasks[index].status !== updatedTask.status) {
       const tasksInNewStatus = tasks.filter(t => t.status === updatedTask.status);
       updatedTask.position = tasksInNewStatus.length;
+    }
+    
+    // Preserve subtasks if they exist in the original task but not in the updated task
+    if (!updatedTask.subtasks && tasks[index].subtasks) {
+      updatedTask.subtasks = tasks[index].subtasks;
     }
     
     tasks[index] = updatedTask;
@@ -84,6 +89,47 @@ export const updateTaskStatus = (id: string, status: TaskStatus): void => {
       task.position = tasksInNewStatus.length;
     }
     
+    saveTasks(tasks);
+  }
+};
+
+export const updateSubtask = (taskId: string, subtaskId: string, completed: boolean): void => {
+  const tasks = getTasks();
+  const task = tasks.find(t => t.id === taskId);
+  
+  if (task && task.subtasks) {
+    const subtaskIndex = task.subtasks.findIndex(st => st.id === subtaskId);
+    
+    if (subtaskIndex !== -1) {
+      task.subtasks[subtaskIndex].completed = completed;
+      task.updatedAt = Date.now();
+      saveTasks(tasks);
+    }
+  }
+};
+
+export const addSubtask = (taskId: string, subtask: SubTask): void => {
+  const tasks = getTasks();
+  const task = tasks.find(t => t.id === taskId);
+  
+  if (task) {
+    if (!task.subtasks) {
+      task.subtasks = [];
+    }
+    
+    task.subtasks.push(subtask);
+    task.updatedAt = Date.now();
+    saveTasks(tasks);
+  }
+};
+
+export const deleteSubtask = (taskId: string, subtaskId: string): void => {
+  const tasks = getTasks();
+  const task = tasks.find(t => t.id === taskId);
+  
+  if (task && task.subtasks) {
+    task.subtasks = task.subtasks.filter(st => st.id !== subtaskId);
+    task.updatedAt = Date.now();
     saveTasks(tasks);
   }
 };
