@@ -49,6 +49,14 @@ export function TaskCard({ task, onEdit, onDelete, isDragging, dragOverlay }: Ta
   const completedSubtasks = subtasks.filter(subtask => subtask.completed).length;
   const hasSubtasks = subtasks.length > 0;
 
+  // Handle click on the card (excluding clicks on buttons)
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Only open edit modal if not dragging and not clicking on action buttons
+    if (!isCurrentlyDragging && !dragOverlay) {
+      onEdit(task);
+    }
+  };
+
   return (
     <motion.div
       ref={setNodeRef}
@@ -60,7 +68,7 @@ export function TaskCard({ task, onEdit, onDelete, isDragging, dragOverlay }: Ta
       whileHover={{ y: -2 }}
       transition={{ duration: 0.2 }}
       className={cn(
-        'bg-white dark:bg-secondary-800 rounded-xl shadow-task p-4 mb-3 cursor-grab',
+        'bg-white dark:bg-secondary-800 rounded-xl shadow-task p-4 mb-3 cursor-pointer',
         'border-l-4 hover:shadow-task-hover transition-all duration-200',
         statusColors[task.status],
         isCurrentlyDragging && 'opacity-50',
@@ -68,6 +76,7 @@ export function TaskCard({ task, onEdit, onDelete, isDragging, dragOverlay }: Ta
       )}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onClick={handleCardClick}
       {...listeners}
       {...attributes}
     >
