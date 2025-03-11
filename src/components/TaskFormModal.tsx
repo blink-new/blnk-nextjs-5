@@ -72,6 +72,25 @@ export function TaskFormModal({ task, isOpen, onClose, onSave, initialStatus }: 
     );
   };
 
+  // Handle Enter key in title field to submit the form
+  const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey && title.trim()) {
+      e.preventDefault();
+      handleSubmit(e);
+    }
+  };
+
+  // Handle Shift+Enter in description field for line breaks
+  const handleDescriptionKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (title.trim()) {
+        handleSubmit(e);
+      }
+    }
+    // Shift+Enter will naturally create a line break in a textarea
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -105,6 +124,7 @@ export function TaskFormModal({ task, isOpen, onClose, onSave, initialStatus }: 
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              onKeyDown={handleTitleKeyDown}
               className="w-full px-3 py-2 bg-white dark:bg-secondary-900 border border-secondary-200 dark:border-secondary-700 rounded-lg 
                        focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-500"
               placeholder="Task title"
@@ -116,11 +136,15 @@ export function TaskFormModal({ task, isOpen, onClose, onSave, initialStatus }: 
           <div className="mb-4">
             <label htmlFor="description" className="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-1">
               Description (optional)
+              <span className="ml-1 text-xs text-secondary-500 dark:text-secondary-400">
+                (Shift+Enter for new line)
+              </span>
             </label>
             <textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              onKeyDown={handleDescriptionKeyDown}
               className="w-full px-3 py-2 bg-white dark:bg-secondary-900 border border-secondary-200 dark:border-secondary-700 rounded-lg 
                        focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-500 min-h-[80px]"
               placeholder="Add details about this task"
